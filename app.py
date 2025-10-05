@@ -44,26 +44,30 @@ def load_vectorstore():
 
 
 def answer(question: str, vectorstore: FAISS) -> str:
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})  # antes era 2 o 3 quizás
     docs = retriever.get_relevant_documents(question)
 
     if not docs:
-        return "No encuentro pasajes relevantes en el índice cargado."
+        return "No encuentro pasajes relevantes en los documentos cargados."
 
-    context = "\n\n".join(d.page_content for d in docs[:10])
+    context = "\n\n".join(d.page_content for d in docs)
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+    # 🔹 Prompt actualizado: fuerza al modelo a responder SOLO con contexto
     prompt = f"""
-Responde de forma clara y concisa la siguiente pregunta.
+Eres un asistente especializado en responder sobre procedimientos y políticas internas de una empresa.
+Responde ÚNICAMENTE con base en el siguiente contexto.
+Si el contexto no contiene la información necesaria, responde "No tengo información suficiente en los documentos".
 
 Pregunta: {question}
 
 Contexto:
 {context}
-
-Si el contexto no es suficiente, responde con conocimientos generales.
 """
-    return llm.predict(prompt).strip()
+
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    response = llm.predict(prompt)
+    return response.strip()
+
 
 # ===== UI =====
 vs = load_vectorstore()
