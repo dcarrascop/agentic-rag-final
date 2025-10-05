@@ -1,47 +1,38 @@
 # build_index.py
-import os, hashlib
+import os
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-PDF_PATH = "genai-principles.pdf"             # tu PDF fuente
-PERSIST_DIR = "data/faiss_index"              # carpeta que subiremos al repo
+# === CONFIG ===
+DATA_DIR = "data"
+INDEX_DIR = "data/faiss_index"
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-def file_hash(path: str) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
+# === CARGA DE DOCUMENTOS ===
+pdf_files = [
+    "Financiamiento_Capacitacion.pdf",
+    "Seguros_Complementarios.pdf"
+]
 
-def main():
-    if not os.path.exists(PDF_PATH):
-        raise FileNotFoundError(f"No se encontró {PDF_PATH}")
+docs = []
+for pdf in pdf_files:
+    path = os.path.join(DATA_DIR, pdf)
+    print(f"📄 Cargando {pdf}...")
+    loader = PyPDFLoader(path)
+    docs.extend(loader.load())
 
-    print("📄 Cargando PDF…")
-    docs = PyPDFLoader(PDF_PATH).load()
-    if not docs:
-        raise ValueError("El PDF parece no tener texto (¿escaneado?).")
+# === DIVISIÓN EN CHUNKS ===
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+splits = splitter.split_documents(docs)
+print(f"✅ Total de fragmentos: {len(splits)}")
 
-    print("🔪 Splitting…")
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    splits = splitter.split_documents(docs)
+# === EMBEDDINGS Y VECTORIZACIÓN ===
+embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+db = FAISS.from_documents(splits, embeddings)
 
-    print("🔢 Embeddings…")
-    embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
-
-    print("🧱 Construyendo FAISS…")
-    vs = FAISS.from_documents(splits, embeddings)
-
-    os.makedirs(PERSIST_DIR, exist_ok=True)
-    vs.save_local(PERSIST_DIR)
-
-    with open(os.path.join(PERSIST_DIR, "meta.txt"), "w", encoding="utf-8") as f:
-        f.write(file_hash(PDF_PATH))
-
-    print(f"✅ Guardado en {PERSIST_DIR}. Sube esta carpeta a tu repo.")
-
-if __name__ == "__main__":
-    main()
+# === GUARDADO ===
+os.makedirs(INDEX_DIR, exist_ok=True)
+db.save_local(INDEX_DIR)
+print(f"💾 Índice guardado en {INDEX_DIR}")
