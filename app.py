@@ -47,6 +47,9 @@ def answer(question: str, vectorstore: FAISS) -> str:
     retriever = vectorstore.as_retriever(search_kwargs={"k": 8})  # antes era 2 o 3 quizás
     docs = retriever.get_relevant_documents(question)
 
+    for doc in docs:
+        print(doc.page_content[:500])
+
     if not docs:
         return "No encuentro pasajes relevantes en los documentos cargados."
 
