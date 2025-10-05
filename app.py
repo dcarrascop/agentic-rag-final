@@ -12,9 +12,9 @@ from langchain_openai import ChatOpenAI
 PERSIST_DIR = "data/faiss_index"  # carpeta con index.faiss, index.pkl, docstore.pkl, meta.txt
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # DEBE ser el MISMO que usaste al construir
 
-st.set_page_config(page_title="Agentic RAG (FAISS pre-cargado)", page_icon="🧠")
-st.title("🧠 Agentic RAG – Índice FAISS precalculado")
-st.caption("Usa un índice FAISS ya generado para evitar recalcular embeddings.")
+st.set_page_config(page_title="Agentic RAG", page_icon="🧠")
+st.title("🧠 Agentic RAG")
+#st.caption("Ingresa una pregunta")
 
 @st.cache_resource
 def load_vectorstore():
