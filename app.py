@@ -44,7 +44,7 @@ def load_vectorstore():
 
 
 def answer(question: str, vectorstore: FAISS) -> str:
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})  # antes era 2 o 3 quizás
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 8})  # antes era 2 o 3 quizás
     docs = retriever.get_relevant_documents(question)
 
     if not docs:
